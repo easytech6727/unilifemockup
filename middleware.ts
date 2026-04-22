@@ -38,11 +38,22 @@ const roleRoutes: Record<string, string[]> = {
 }
 
 export async function middleware(request: NextRequest) {
-  const { supabaseResponse, user, supabase } = await updateSession(request)
   const { pathname } = request.nextUrl
 
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
+  const hasAuthCookies = request.cookies
+    .getAll()
+    .some(({ name }) => name.startsWith('sb-') && name.includes('auth-token'))
+
+  // Public pages without Supabase session cookies do not need auth refresh.
+  if (isPublicRoute && !hasAuthCookies) {
+    return NextResponse.next({ request })
+  }
+
+  const { supabaseResponse, user, supabase } = await updateSession(request)
+
   // Allow public routes
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
+  if (isPublicRoute) {
     if (user && (pathname === '/login' || pathname === '/signup')) {
       const role = (user.user_metadata?.role as string) || ''
       if (role) {
