@@ -1,64 +1,116 @@
 import { NextResponse } from 'next/server'
 import { verifyRole } from '@/lib/auth.server'
 import { createClient } from '@/lib/supabase/server'
+import { getAdminClient } from '@/lib/supabase/admin'
 
 /** GET /api/vendor/analytics — real sales stats for vendor (food or laundry) */
 export async function GET() {
   try {
     const user = await verifyRole('vendor')
-    console.log('📊 Analytics request - User:', user?.email, 'Role:', user?.role)
-    
     if (!user) {
-      console.error('❌ User verification failed')
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
     }
 
     const email = user.email?.toLowerCase()
-    if (!email) {
-      console.warn('⚠️ No email found')
-      return NextResponse.json({ stats: [], chartData: [], topProducts: [], statusDistribution: [] })
-    }
+    if (!email) return NextResponse.json({ stats: [], chartData: [], topProducts: [], statusDistribution: [] })
 
-    const client = await createClient()
+    let client: Awaited<ReturnType<typeof createClient>>
+    try {
+      // Prefer admin client to avoid RLS-related read failures in analytics.
+      client = getAdminClient() as unknown as Awaited<ReturnType<typeof createClient>>
+    } catch {
+      client = await createClient()
+    }
     const today = new Date().toISOString().slice(0, 10)
-    console.log('📅 Today:', today)
+
+    let stallIds: Array<number | string> = []
+    let shopIds: Array<number | string> = []
+    let shouldUseFood = false
+    let shouldUseLaundry = false
 
     if (user.role === 'vendor-food') {
-      console.log('🍕 Food vendor detected, searching for stalls with email:', email)
-      // Use case-insensitive matching
-      const { data: stalls, error: stallError } = await client
+      const { data: foodStalls, error: foodStallsError } = await client
         .from('food_stalls')
         .select('id')
-        .ilike('owner_email', email)  // Changed to ilike for case-insensitive matching
-      console.log('📍 Found stalls:', stalls?.length, 'Error:', stallError)
-      
-      const stallIds = (stalls ?? []).map((s) => s.id)
-      if (stallIds.length === 0) {
-        console.warn('⚠️ No food stalls found for vendor')
+        .ilike('owner_email', email)
+
+      if (foodStallsError) {
+        return NextResponse.json({ stats: [], chartData: [], topProducts: [], statusDistribution: [], message: foodStallsError.message })
+      }
+
+      stallIds = (foodStalls ?? []).map((s) => s.id)
+      shouldUseFood = true
+    } else if (user.role === 'vendor-laundry') {
+      const { data: laundryShops, error: laundryShopsError } = await client
+        .from('laundry_shops')
+        .select('id')
+        .ilike('owner_email', email)
+
+      if (laundryShopsError) {
+        return NextResponse.json({ stats: [], chartData: [], topProducts: [], statusDistribution: [], message: laundryShopsError.message })
+      }
+
+      shopIds = (laundryShops ?? []).map((s) => s.id)
+      shouldUseLaundry = true
+    } else {
+      // Generic vendor fallback: attempt both lookups, prefer food when both exist.
+      const { data: foodStalls, error: foodStallsError } = await client
+        .from('food_stalls')
+        .select('id')
+        .ilike('owner_email', email)
+
+      const { data: laundryShops, error: laundryShopsError } = await client
+        .from('laundry_shops')
+        .select('id')
+        .ilike('owner_email', email)
+
+      if (foodStallsError && laundryShopsError) {
         return NextResponse.json({
           stats: [],
           chartData: [],
           topProducts: [],
           statusDistribution: [],
+          message: foodStallsError.message || laundryShopsError.message,
+        })
+      }
+
+      stallIds = (foodStalls ?? []).map((s) => s.id)
+      shopIds = (laundryShops ?? []).map((s) => s.id)
+
+      shouldUseFood = stallIds.length > 0
+      shouldUseLaundry = !shouldUseFood && shopIds.length > 0
+    }
+
+    if (shouldUseFood) {
+      if (stallIds.length === 0) {
+        return NextResponse.json({
+          stats: [],
+          chartData: [],
+          topProducts: [],
+          statusDistribution: [],
+          shopType: 'food',
         })
       }
 
       const { data: allOrders, error: orderError } = await client
         .from('food_orders')
-        .select('id, total, status, created_at, items')
+        .select('*')
         .in('food_stall_id', stallIds)
 
-      console.log('🛒 Found orders:', allOrders?.length, 'Error:', orderError)
+      if (orderError) {
+        return NextResponse.json({ stats: [], chartData: [], topProducts: [], statusDistribution: [], shopType: 'food', message: orderError.message })
+      }
 
       const orders = allOrders ?? []
+      const getFoodAmount = (o: { total?: number | null; total_amount?: number | null }) => Number(o.total ?? o.total_amount ?? 0) || 0
       const todayOrders = orders.filter((o) => String(o.created_at).slice(0, 10) === today)
-      const todayRevenue = todayOrders.reduce((s, o) => s + (Number(o.total) || 0), 0)
-      const avgOrderValue = orders.length > 0 ? orders.reduce((s, o) => s + (Number(o.total) || 0), 0) / orders.length : 0
+      const todayRevenue = todayOrders.reduce((s, o) => s + getFoodAmount(o), 0)
+      const avgOrderValue = orders.length > 0 ? orders.reduce((s, o) => s + getFoodAmount(o), 0) / orders.length : 0
 
       const weekStart = new Date()
       weekStart.setDate(weekStart.getDate() - 7)
       const weekOrders = orders.filter((o) => new Date(o.created_at) >= weekStart)
-      const weekRevenue = weekOrders.reduce((s, o) => s + (Number(o.total) || 0), 0)
+      const weekRevenue = weekOrders.reduce((s, o) => s + getFoodAmount(o), 0)
 
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
       const chartData: { day: string; revenue: number; orders: number }[] = []
@@ -69,7 +121,7 @@ export async function GET() {
         const dayOrders = orders.filter((o) => String(o.created_at).slice(0, 10) === dayStr)
         chartData.push({
           day: dayNames[d.getDay()],
-          revenue: dayOrders.reduce((s, o) => s + (Number(o.total) || 0), 0),
+          revenue: dayOrders.reduce((s, o) => s + getFoodAmount(o), 0),
           orders: dayOrders.length,
         })
       }
@@ -109,7 +161,7 @@ export async function GET() {
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 5)
 
-      const response = {
+      return NextResponse.json({
         stats: [
           { label: "Today's Revenue", value: `RS ${todayRevenue.toLocaleString()}`, change: '', color: 'text-green-600', bg: 'bg-green-100', icon: 'DollarSign' },
           { label: "Today's Orders", value: String(todayOrders.length), change: '', color: 'text-blue-600', bg: 'bg-blue-100', icon: 'Package' },
@@ -120,40 +172,31 @@ export async function GET() {
         topProducts,
         statusDistribution,
         shopType: 'food',
-      }
-      console.log('✅ Returning food vendor response:', response)
-      return NextResponse.json(response)
+      })
     }
 
-    if (user.role === 'vendor-laundry') {
-      console.log('🧺 Laundry vendor detected, searching for shops with email:', email)
-      // Use case-insensitive matching
-      const { data: shops, error: shopError } = await client
-        .from('laundry_shops')
-        .select('id')
-        .ilike('owner_email', email)  // Changed to ilike for case-insensitive matching
-      console.log('📍 Found laundry shops:', shops?.length, 'Error:', shopError)
-      
-      const shopIds = (shops ?? []).map((s) => s.id)
+    if (shouldUseLaundry) {
       if (shopIds.length === 0) {
-        console.warn('⚠️ No laundry shops found for vendor')
         return NextResponse.json({
           stats: [],
           chartData: [],
           topProducts: [],
           statusDistribution: [],
+          shopType: 'laundry',
         })
       }
 
       const { data: allOrders, error: orderError } = await client
         .from('laundry_orders')
-        .select('id, total, status, created_at, service, items_description')
+        .select('*')
         .in('laundry_shop_id', shopIds)
 
-      console.log('🛒 Found laundry orders:', allOrders?.length, 'Error:', orderError)
+      if (orderError) {
+        return NextResponse.json({ stats: [], chartData: [], topProducts: [], statusDistribution: [], shopType: 'laundry', message: orderError.message })
+      }
 
       const orders = allOrders ?? []
-      const getAmount = (o: { total?: number | null }) => Number(o.total ?? 0) || 0
+      const getAmount = (o: { total?: number | null; total_amount?: number | null }) => Number(o.total ?? o.total_amount ?? 0) || 0
       const todayOrders = orders.filter((o) => String(o.created_at).slice(0, 10) === today)
       const todayRevenue = todayOrders.reduce((s, o) => s + getAmount(o), 0)
       const avgOrderValue = orders.length > 0 ? orders.reduce((s, o) => s + getAmount(o), 0) / orders.length : 0
@@ -202,7 +245,7 @@ export async function GET() {
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 5)
 
-      const response = {
+      return NextResponse.json({
         stats: [
           { label: "Today's Revenue", value: `RS ${todayRevenue.toLocaleString()}`, change: '', color: 'text-green-600', bg: 'bg-green-100', icon: 'DollarSign' },
           { label: "Today's Orders", value: String(todayOrders.length), change: '', color: 'text-blue-600', bg: 'bg-blue-100', icon: 'Package' },
@@ -213,15 +256,12 @@ export async function GET() {
         topProducts,
         statusDistribution,
         shopType: 'laundry',
-      }
-      console.log('✅ Returning laundry vendor response:', response)
-      return NextResponse.json(response)
+      })
     }
 
-    console.warn('❌ Invalid vendor role:', user.role)
     return NextResponse.json({ stats: [], chartData: [], topProducts: [], statusDistribution: [] })
   } catch (e) {
-    console.error('❌ Vendor analytics GET error:', e)
-    return NextResponse.json({ message: 'Internal server error', error: String(e) }, { status: 500 })
+    console.error('Vendor analytics GET error:', e)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
   }
 }

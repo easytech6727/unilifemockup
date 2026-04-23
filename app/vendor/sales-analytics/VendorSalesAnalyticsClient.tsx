@@ -121,6 +121,7 @@ export default function VendorSalesAnalyticsClient({ user }: VendorSalesAnalytic
   }
 
   const maxRevenue = chartData.length ? Math.max(...chartData.map((d) => d.revenue), 1) : 1
+  const yAxisTicks = [100, 75, 50, 25, 0]
 
   if (loading) {
     return (
@@ -222,24 +223,59 @@ export default function VendorSalesAnalyticsClient({ user }: VendorSalesAnalytic
         {/* Weekly Revenue Chart */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <h3 className="font-semibold text-gray-900 mb-6">Weekly Revenue</h3>
-          <div className="flex items-end gap-2 h-48">
-            {chartData.length ? (
-              chartData.map((d) => (
-                <div key={d.day} className="flex-1 flex flex-col items-center gap-2">
+          <div className="grid grid-cols-[64px_1fr] gap-3">
+            <div className="relative h-44 pr-2">
+              {yAxisTicks.map((tick) => (
+                <span
+                  key={tick}
+                  className="absolute -translate-y-1/2 text-[11px] text-gray-500 leading-none"
+                  style={{ top: `${100 - tick}%` }}
+                >
+                  RS {Math.round((maxRevenue * tick) / 100).toLocaleString()}
+                </span>
+              ))}
+            </div>
+
+            <div>
+              <div className="relative h-44 border-l border-b border-gray-200">
+                {yAxisTicks.map((tick) => (
                   <div
-                    className="w-full bg-primary/80 rounded-t-lg transition-all hover:bg-primary min-h-[4px]"
-                    style={{ height: `${(d.revenue / maxRevenue) * 100}%` }}
-                    title={`${d.day}: RS ${d.revenue.toLocaleString()} (${d.orders} orders)`}
+                    key={`grid-${tick}`}
+                    className="absolute left-0 right-0 border-t border-dashed border-gray-100"
+                    style={{ top: `${100 - tick}%` }}
                   />
-                  <span className="text-xs text-gray-500">{d.day}</span>
-                  <span className="text-xs font-medium text-gray-700">
-                    {d.revenue >= 1000 ? `RS ${(d.revenue / 1000).toFixed(1)}k` : `RS ${d.revenue}`}
-                  </span>
+                ))}
+
+                {chartData.length ? (
+                  <div className="absolute inset-0 flex items-end gap-2 px-2 pb-0.5">
+                    {chartData.map((d) => (
+                      <div key={d.day} className="flex-1 h-full flex items-end">
+                        <div
+                          className="w-full bg-primary/80 rounded-t-md transition-all hover:bg-primary min-h-[4px]"
+                          style={{ height: `${(d.revenue / maxRevenue) * 100}%` }}
+                          title={`${d.day}: RS ${d.revenue.toLocaleString()} (${d.orders} orders)`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="absolute inset-0 flex items-center justify-center text-gray-500">No revenue data for this week</p>
+                )}
+              </div>
+
+              {chartData.length > 0 && (
+                <div className="grid gap-2 mt-2" style={{ gridTemplateColumns: `repeat(${chartData.length}, minmax(0, 1fr))` }}>
+                  {chartData.map((d) => (
+                    <div key={`${d.day}-label`} className="text-center">
+                      <span className="block text-xs text-gray-500">{d.day}</span>
+                      <span className="block text-xs font-medium text-gray-700">
+                        {d.revenue >= 1000 ? `RS ${(d.revenue / 1000).toFixed(1)}k` : `RS ${d.revenue}`}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-500 col-span-full">No revenue data for this week</p>
-            )}
+              )}
+            </div>
           </div>
         </div>
 

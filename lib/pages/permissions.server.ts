@@ -18,6 +18,14 @@ const REMOVED_STUDENT_PATHS = new Set([
   '/student/marketplace',
 ])
 
+// Shared vendor pages that both vendor-food and vendor-laundry should be able to see.
+const SHARED_VENDOR_PATHS = new Set([
+  '/vendor/dashboard',
+  '/vendor/products',
+  '/vendor/my-store',
+  '/vendor/sales-analytics',
+])
+
 function isVisiblePagePath(path: unknown): boolean {
   const p = String(path || '')
   return !REMOVED_STUDENT_PATHS.has(p)
@@ -52,10 +60,15 @@ export async function getAllowedNavItemsForRole(role: UserRole, userId?: number)
   const rolePermMap = new Map((rolePerms || []).map((r: any) => [r.page_id, r.enabled]))
   const userPermMap = new Map(userPerms.map((r) => [r.page_id, r.enabled]))
 
-  // Super_admin sees their own pages plus all admin pages (dashboard, users, timetable, reports, announcements, add laundry/food/timetable/trip/user/vendor)
-  const rolePages = (allPagesData || []).filter(
-    (p: any) => p.role === role || (role === 'super_admin' && p.role === 'admin')
-  ).filter((p: any) => isVisiblePagePath(p.path))
+  // Super_admin sees their own pages plus all admin pages.
+  // vendor-laundry also sees shared vendor pages that may be stored under vendor-food in app_pages.
+  const rolePages = (allPagesData || [])
+    .filter((p: any) => {
+      if (role === 'super_admin') return p.role === role || p.role === 'admin'
+      if (role === 'vendor-laundry') return p.role === role || SHARED_VENDOR_PATHS.has(String(p.path || ''))
+      return p.role === role
+    })
+    .filter((p: any) => isVisiblePagePath(p.path))
   const allowedRolePages = rolePages.filter((p: any) => {
     const userOverride = userPermMap.get(p.id)
     if (userOverride !== undefined) return userOverride
