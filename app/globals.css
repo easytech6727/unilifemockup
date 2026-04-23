@@ -2,6 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme Color Variables - Main Brand Color: #4f46e5 */
+:root {
+  /* Primary Colors */
+  --color-primary: #4f46e5;
+  --color-primary-dark: #4338ca;
+  --color-primary-light: #818cf8;
+  --color-primary-lighter: #a5b4fc;
+  
+  /* Secondary Colors */
+  --color-secondary: #6366f1;
+  --color-secondary-dark: #4f46e5;
+  
+  /* Light Mode Colors */
+  --color-bg-light: #ffffff;
+  --color-bg-light-secondary: #f9fafb;
+  --color-text-light: #000000;
+  --color-text-light-secondary: #1f2937;
+  --color-text-light-tertiary: #4b5563;
+  --color-border-light: #e5e7eb;
+  --color-border-light-dark: #d1d5db;
+  
+  /* Dark Mode Colors */
+  --color-bg-dark: #0f172a;
+  --color-bg-dark-secondary: #1e293b;
+  --color-text-dark: #ffffff;
+  --color-text-dark-secondary: #e5e7eb;
+  --color-text-dark-tertiary: #d1d5db;
+  --color-border-dark: #334155;
+  --color-border-dark-light: #475569;
+  
+  /* Semantic Colors */
+  --color-danger: #EF4444;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+  
+  /* For Light Mode (Default) */
+  --bg-primary: var(--color-bg-light);
+  --bg-secondary: var(--color-bg-light-secondary);
+  --text-primary: var(--color-text-light);
+  --text-secondary: var(--color-text-light-secondary);
+  --text-tertiary: var(--color-text-light-tertiary);
+  --border-color: var(--color-border-light);
+  --border-color-dark: var(--color-border-light-dark);
+}
+
+/* Dark Mode Overrides */
+body.dark-mode {
+  --bg-primary: var(--color-bg-dark);
+  --bg-secondary: var(--color-bg-dark-secondary);
+  --text-primary: var(--color-text-dark);
+  --text-secondary: var(--color-text-dark-secondary);
+  --text-tertiary: var(--color-text-dark-tertiary);
+  --border-color: var(--color-border-dark);
+  --border-color-dark: var(--color-border-dark-light);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -14,8 +71,8 @@ html {
 
 body {
   font-family: var(--font-body), 'DM Sans', sans-serif;
-  background-color: #fafaf9;
-  color: #1f2937;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 h1,
