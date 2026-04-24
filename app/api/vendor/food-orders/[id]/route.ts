@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyRole } from '@/lib/auth.server'
 import { createClient } from '@/lib/supabase/server'
 import { isDeliveryServiceAvailable } from '@/lib/delivery-availability.server'
+import { sendDialogSms } from '@/lib/dialog-sms.server'
+import { normalizeSmsPhoneNumber } from '@/lib/student-phone.server'
 
 /** PATCH /api/vendor/food-orders/[id] — update order status */
 export async function PATCH(
@@ -24,7 +26,7 @@ export async function PATCH(
     const client = await createClient()
     const { data: order } = await client
       .from('food_orders')
-      .select('id, food_stall_id, notes')
+      .select('id, food_stall_id, notes, customer_phone, customer_name, order_ref')
       .eq('id', numId)
       .single()
     if (!order) return NextResponse.json({ message: 'Not found' }, { status: 404 })
@@ -72,6 +74,29 @@ export async function PATCH(
 
     const { error } = await client.from('food_orders').update(updates).eq('id', numId)
     if (error) return NextResponse.json({ message: error.message }, { status: 400 })
+
+    // Notify customer for key decision states.
+    if (status === 'preparing' || status === 'cancelled') {
+      const smsPhone = normalizeSmsPhoneNumber(order.customer_phone)
+      if (smsPhone) {
+        const orderRef = String(order.order_ref || `ORD-${numId}`)
+        const smsText = status === 'preparing'
+          ? `UniLife: Your food order (${orderRef}) is confirmed and now being prepared.`
+          : `UniLife: Your food order (${orderRef}) was cancelled by the stall. Please place a new order if needed.`
+
+        void sendDialogSms({
+          number: smsPhone,
+          text: smsText,
+          clientRef: `RPOSbyUpview_UniLife_food_${numId}_${status}`,
+        }).then((result) => {
+          if (!result.ok || result.gatewayReportedError) {
+            const hint = result.gatewayErrorHint || JSON.stringify(result.body).slice(0, 200)
+            console.warn('[Food Order SMS]', hint)
+          }
+        })
+      }
+    }
+
     return NextResponse.json({ ok: true })
   } catch (e) {
     console.error('Vendor food-orders PATCH error:', e)

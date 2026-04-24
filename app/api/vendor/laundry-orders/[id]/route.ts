@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyRole } from '@/lib/auth.server'
 import { createClient } from '@/lib/supabase/server'
+import { sendDialogSms } from '@/lib/dialog-sms.server'
+import { normalizeSmsPhoneNumber } from '@/lib/student-phone.server'
 
 function candidateStatuses(input: string): string[] {
   const s = String(input || '').toLowerCase()
@@ -34,9 +36,14 @@ export async function PATCH(
     const body = await request.json()
     const { status } = body
     if (!status) return NextResponse.json({ message: 'Invalid status' }, { status: 400 })
+    const requestedStatus = String(status).toLowerCase()
 
     const client = await createClient()
-    const { data: order } = await client.from('laundry_orders').select('laundry_shop_id').eq('id', numId).single()
+    const { data: order } = await client
+      .from('laundry_orders')
+      .select('laundry_shop_id, customer_phone, customer_name, order_ref')
+      .eq('id', numId)
+      .single()
     if (!order) return NextResponse.json({ message: 'Not found' }, { status: 404 })
 
     const { data: shop } = await client.from('laundry_shops').select('id').eq('id', order.laundry_shop_id).eq('owner_email', user.email?.toLowerCase()).single()
@@ -46,7 +53,33 @@ export async function PATCH(
     let lastError: string | null = null
     for (const candidate of attempts) {
       const { error } = await client.from('laundry_orders').update({ status: candidate }).eq('id', numId)
-      if (!error) return NextResponse.json({ ok: true, status: candidate })
+      if (!error) {
+        const isConfirmedStatus = ['washing', 'in_progress', 'processing', 'confirmed', 'accepted', 'picked_up'].includes(candidate)
+        const isCancelledStatus = ['cancelled', 'canceled', 'rejected'].includes(candidate)
+
+        if ((isConfirmedStatus || isCancelledStatus) && (requestedStatus === 'washing' || requestedStatus === 'cancelled' || requestedStatus === 'canceled')) {
+          const smsPhone = normalizeSmsPhoneNumber(order.customer_phone)
+          if (smsPhone) {
+            const orderRef = String(order.order_ref || `LND-${numId}`)
+            const smsText = isCancelledStatus
+              ? `UniLife: Your laundry order (${orderRef}) was cancelled by the shop. Please place a new order if needed.`
+              : `UniLife: Your laundry order (${orderRef}) is confirmed and now in progress.`
+
+            void sendDialogSms({
+              number: smsPhone,
+              text: smsText,
+              clientRef: `RPOSbyUpview_UniLife_laundry_${numId}_${isCancelledStatus ? 'cancelled' : 'confirmed'}`,
+            }).then((result) => {
+              if (!result.ok || result.gatewayReportedError) {
+                const hint = result.gatewayErrorHint || JSON.stringify(result.body).slice(0, 200)
+                console.warn('[Laundry Order SMS]', hint)
+              }
+            })
+          }
+        }
+
+        return NextResponse.json({ ok: true, status: candidate })
+      }
       lastError = error.message
     }
     return NextResponse.json({ message: lastError || 'Failed to update status' }, { status: 400 })

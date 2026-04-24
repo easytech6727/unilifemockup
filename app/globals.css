@@ -6,12 +6,14 @@
 :root {
   /* Primary Colors */
   --color-primary: #4f46e5;
+  --color-primary-rgb: 79 70 229;
   --color-primary-dark: #4338ca;
   --color-primary-light: #818cf8;
   --color-primary-lighter: #a5b4fc;
   
   /* Secondary Colors */
   --color-secondary: #6366f1;
+  --color-secondary-rgb: 99 102 241;
   --color-secondary-dark: #4f46e5;
   
   /* Light Mode Colors */
@@ -34,6 +36,7 @@
   
   /* Semantic Colors */
   --color-danger: #EF4444;
+  --color-danger-rgb: 239 68 68;
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-info: #3b82f6;
@@ -183,10 +186,8 @@ h6,
 
 /* Custom Focus Styles */
 .focus-ring:focus {
-  outline: none;
-  ring: 2px;
-  ring-color: #4F46E5;
-  ring-offset: 2px;
+  outline: 2px solid #4F46E5;
+  outline-offset: 2px;
 }
 
 /* Progress Bar Animation */
@@ -216,15 +217,18 @@ h6,
 }
 
 .badge-primary {
-  @apply bg-primary/10 text-primary;
+  @apply text-primary;
+  background-color: rgb(var(--color-primary-rgb) / 0.1);
 }
 
 .badge-success {
-  @apply bg-secondary/10 text-secondary;
+  @apply text-secondary;
+  background-color: rgb(var(--color-secondary-rgb) / 0.1);
 }
 
 .badge-danger {
-  @apply bg-danger/10 text-danger;
+  @apply text-danger;
+  background-color: rgb(var(--color-danger-rgb) / 0.1);
 }
 
 .badge-warning {
@@ -237,7 +241,7 @@ h6,
 }
 
 .btn-primary {
-  @apply bg-primary text-white hover:bg-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2;
+  @apply bg-primary text-white hover:bg-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
 }
 
 .btn-secondary {
@@ -245,16 +249,16 @@ h6,
 }
 
 .btn-outline {
-  @apply border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2;
+  @apply border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
 }
 
 .btn-danger {
-  @apply bg-danger text-white hover:bg-danger/90 active:scale-95;
+  @apply bg-danger text-white hover:bg-danger active:scale-95;
 }
 
 /* Input Styles */
 .input {
-  @apply w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all duration-200;
+  @apply w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary outline-none transition-all duration-200;
 }
 
 /* Tab Styles */
@@ -277,7 +281,7 @@ h6,
 
 /* Extended Button Styles */
 .btn-primary-lg {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition-colors hover:bg-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition-colors hover:bg-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50;
 }
 
 .btn-ghost {

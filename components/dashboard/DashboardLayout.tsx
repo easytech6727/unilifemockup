@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -52,6 +52,15 @@ interface DashboardLayoutProps {
     role: UserRole
     avatar_url?: string
   }
+}
+
+type VendorOrderAlert = {
+  id: string
+  type: 'food' | 'laundry'
+  customer: string
+  summary: string
+  createdAt: string
+  href: string
 }
 
 // Navigation items for each role
@@ -183,10 +192,14 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isNavigating, setIsNavigating] = useState(false)
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null)
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false)
+  const [vendorAlerts, setVendorAlerts] = useState<VendorOrderAlert[]>([])
+  const [unreadAlerts, setUnreadAlerts] = useState(0)
 
   const [supabase, setSupabase] = useState<any | null>(null)
   const [apiNavItems, setApiNavItems] = useState<NavItem[] | null>(null)
   const pathSegment = rolePathSegment(user.role)
+  const prevAlertIdsRef = useRef<string[]>([])
 
   useEffect(() => {
     setSupabase(createClient())
@@ -211,6 +224,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
   const navItems: NavItem[] = apiNavItems != null ? apiNavItems : fallbackNav
   const roleInfo = roleConfig[user.role] ?? roleConfig['vendor-food']
   const isDeliveryUI = user.role === 'delivery'
+  const isVendorRole = user.role === 'vendor' || user.role === 'vendor-food' || user.role === 'vendor-laundry'
   const activeNavLabel = navItems.find((item) => item.href === pathname)?.label
 
   const handleLogout = async () => {
@@ -229,6 +243,99 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
       .toUpperCase()
       .slice(0, 2)
   }
+
+  const formatAlertTime = (iso: string) => {
+    const ts = new Date(iso).getTime()
+    if (!Number.isFinite(ts)) return 'just now'
+    const mins = Math.max(0, Math.floor((Date.now() - ts) / 60000))
+    if (mins < 1) return 'just now'
+    if (mins < 60) return `${mins}m ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h ago`
+    return `${Math.floor(hrs / 24)}d ago`
+  }
+
+  useEffect(() => {
+    if (!isVendorRole) return
+
+    let mounted = true
+
+    const loadVendorAlerts = async () => {
+      const tasks: Array<Promise<{ ok: boolean; orders: any[] }>> = []
+
+      if (user.role === 'vendor' || user.role === 'vendor-food') {
+        tasks.push(
+          fetch('/api/vendor/food-orders', { cache: 'no-store' })
+            .then(async (res) => ({ ok: res.ok, orders: (await res.json().catch(() => ({}))).orders ?? [] }))
+            .catch(() => ({ ok: false, orders: [] }))
+        )
+      }
+
+      if (user.role === 'vendor' || user.role === 'vendor-laundry') {
+        tasks.push(
+          fetch('/api/vendor/laundry-orders', { cache: 'no-store' })
+            .then(async (res) => ({ ok: res.ok, orders: (await res.json().catch(() => ({}))).orders ?? [] }))
+            .catch(() => ({ ok: false, orders: [] }))
+        )
+      }
+
+      const results = await Promise.all(tasks)
+      if (!mounted) return
+
+      const alerts: VendorOrderAlert[] = []
+
+      for (const r of results) {
+        for (const o of r.orders ?? []) {
+          const status = String(o?.status ?? '').toLowerCase()
+          const isFoodOrder = Object.prototype.hasOwnProperty.call(o, 'food_stall_id')
+          const isLaundryOrder = Object.prototype.hasOwnProperty.call(o, 'laundry_shop_id')
+
+          if (isFoodOrder && status !== 'new') continue
+          if (isLaundryOrder && status !== 'new') continue
+
+          const type: 'food' | 'laundry' = isLaundryOrder ? 'laundry' : 'food'
+          const orderId = Number(o?.id)
+          if (!Number.isFinite(orderId) || orderId < 1) continue
+
+          alerts.push({
+            id: `${type}-${orderId}`,
+            type,
+            customer: String(o?.customer_name ?? 'Customer'),
+            summary: type === 'food'
+              ? `New food order #ORD-${orderId}`
+              : `New laundry order ${String(o?.order_ref || `#LND-${orderId}`)}`,
+            createdAt: String(o?.created_at ?? new Date().toISOString()),
+            href: type === 'food' ? '/vendor/orders' : '/vendor/laundry/orders',
+          })
+        }
+      }
+
+      alerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      const next = alerts.slice(0, 20)
+      const nextIds = next.map((a) => a.id)
+
+      if (prevAlertIdsRef.current.length > 0) {
+        const oldSet = new Set(prevAlertIdsRef.current)
+        const newlyArrived = nextIds.filter((id) => !oldSet.has(id)).length
+        if (newlyArrived > 0) {
+          setUnreadAlerts((v) => v + newlyArrived)
+        }
+      }
+
+      prevAlertIdsRef.current = nextIds
+      setVendorAlerts(next)
+    }
+
+    void loadVendorAlerts()
+    const t = setInterval(() => {
+      void loadVendorAlerts()
+    }, 10000)
+
+    return () => {
+      mounted = false
+      clearInterval(t)
+    }
+  }, [isVendorRole, user.role])
 
   return (
     <div className="min-h-screen bg-white">
@@ -406,10 +513,58 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
 
             <div className="flex items-center gap-3">
               {/* Notifications */}
-              <button className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50" aria-label="Notifications">
-                <Bell size={20} className="text-slate-600" />
-                <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-red-500" />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setIsNotificationOpen((v) => !v)
+                    if (!isNotificationOpen) setUnreadAlerts(0)
+                  }}
+                  className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  aria-label="Notifications"
+                >
+                  <Bell size={20} className="text-slate-600" />
+                  {isVendorRole && vendorAlerts.length > 0 ? (
+                    <span className="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-red-500 px-1 text-[11px] leading-5 text-white font-semibold text-center">
+                      {unreadAlerts > 0 ? Math.min(unreadAlerts, 99) : vendorAlerts.length}
+                    </span>
+                  ) : null}
+                </button>
+
+                <AnimatePresence>
+                  {isNotificationOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+                    >
+                      <div className="px-4 py-3 border-b border-slate-100">
+                        <p className="text-sm font-semibold text-slate-900">New Orders</p>
+                        <p className="text-xs text-slate-500">Live updates every 10 seconds</p>
+                      </div>
+
+                      <div className="max-h-80 overflow-y-auto">
+                        {isVendorRole && vendorAlerts.length > 0 ? (
+                          vendorAlerts.map((alert) => (
+                            <Link
+                              key={alert.id}
+                              href={alert.href}
+                              onClick={() => setIsNotificationOpen(false)}
+                              className="block px-4 py-3 border-b border-slate-100 hover:bg-slate-50"
+                            >
+                              <p className="text-sm font-medium text-slate-900">{alert.summary}</p>
+                              <p className="text-xs text-slate-500">{alert.customer}</p>
+                              <p className="text-[11px] text-slate-400 mt-1">{formatAlertTime(alert.createdAt)}</p>
+                            </Link>
+                          ))
+                        ) : (
+                          <div className="px-4 py-6 text-sm text-slate-500">No new orders right now.</div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Mobile profile */}
               <div className="lg:hidden">

@@ -9,18 +9,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: 'var(--color-primary)',
+        primary: 'rgb(var(--color-primary-rgb) / <alpha-value>)',
         primaryDark: 'var(--color-primary-dark)',
         primaryLight: 'var(--color-primary-light)',
         primaryLighter: 'var(--color-primary-lighter)',
-        secondary: 'var(--color-secondary)',
+        secondary: 'rgb(var(--color-secondary-rgb) / <alpha-value>)',
         secondaryDark: 'var(--color-secondary-dark)',
         background: 'var(--color-bg-dark)',
         card: 'var(--color-bg-dark-secondary)',
         'text-primary': 'var(--color-text-dark)',
         'text-secondary': 'var(--color-text-dark-secondary)',
         'text-muted': 'var(--color-text-dark-tertiary)',
-        danger: 'var(--color-danger)',
+        danger: 'rgb(var(--color-danger-rgb) / <alpha-value>)',
         success: 'var(--color-success)',
         warning: 'var(--color-warning)',
         info: 'var(--color-info)',
