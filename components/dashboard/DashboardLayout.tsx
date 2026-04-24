@@ -169,7 +169,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
 const roleConfig: Record<UserRole, { label: string; color: string }> = {
   student: { label: 'Student', color: 'bg-blue-100 text-blue-800' },
   lecturer: { label: 'Lecturer', color: 'bg-purple-100 text-purple-800' },
-  admin: { label: 'Admin', color: 'bg-orange-100 text-orange-800' },
+  admin: { label: 'Admin', color: 'bg-blue-100 text-blue-800' },
   vendor: { label: 'Vendor', color: 'bg-green-100 text-green-800' },
   'vendor-food': { label: 'Food Vendor', color: 'bg-green-100 text-green-800' },
   'vendor-laundry': { label: 'Laundry Vendor', color: 'bg-teal-100 text-teal-800' },

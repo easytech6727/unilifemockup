@@ -58,7 +58,7 @@ export default function TripPlanDisplay({
             [
               { label: 'Stay', icon: Hotel, amount: tripPlan.breakdown.stay, box: 'bg-blue-50', ic: 'text-blue-500', amt: 'text-blue-700' },
               { label: 'Travel', icon: Car, amount: tripPlan.breakdown.travel, box: 'bg-purple-50', ic: 'text-purple-500', amt: 'text-purple-700' },
-              { label: 'Food', icon: Utensils, amount: tripPlan.breakdown.food, box: 'bg-orange-50', ic: 'text-orange-500', amt: 'text-orange-700' },
+              { label: 'Food', icon: Utensils, amount: tripPlan.breakdown.food, box: 'bg-blue-50', ic: 'text-blue-500', amt: 'text-blue-700' },
               { label: 'Activities', icon: Star, amount: tripPlan.breakdown.activities, box: 'bg-green-50', ic: 'text-green-500', amt: 'text-green-700' },
               { label: 'Emergency', icon: ShieldCheck, amount: tripPlan.breakdown.emergency, box: 'bg-red-50', ic: 'text-red-500', amt: 'text-red-700' },
             ] as const

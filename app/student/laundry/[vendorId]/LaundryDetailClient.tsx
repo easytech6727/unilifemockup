@@ -606,7 +606,7 @@ export default function LaundryDetailClient({ user, vendorId }: LaundryDetailCli
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
                             className="bg-white rounded-[40px] p-10 max-w-sm w-full text-center shadow-2xl"
                         >
-                            <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6">
                                 <CheckCircle2 size={48} />
                             </div>
                             <h3 className="text-2xl font-black text-gray-900 mb-2">Success!</h3>

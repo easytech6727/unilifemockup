@@ -241,9 +241,9 @@ export default async function LecturerDashboard() {
     <DashboardLayout user={user}>
       <div className="space-y-6">
         {/* Welcome Header */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-green-600 to-emerald-800 p-8 text-white">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-600 to-indigo-800 p-8 text-white">
           <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full -mr-40 -mt-40 blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-60 h-60 bg-emerald-400/10 rounded-full -ml-30 -mb-30 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-60 h-60 bg-indigo-400/10 rounded-full -ml-30 -mb-30 blur-3xl" />
           
           <div className="relative z-10">
             <div className="flex items-start justify-between mb-4">

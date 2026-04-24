@@ -133,7 +133,7 @@ export default function TimetableReminderToast({
           style={{ animationDelay: `${index * 100}ms` }}
         >
           <div className="flex items-start gap-3">
-            <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-200/50">
+            <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-200/50">
               <Bell size={20} className="text-white" />
             </div>
             <div className="flex-1 min-w-0">

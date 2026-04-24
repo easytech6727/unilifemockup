@@ -228,12 +228,12 @@ export default function FoodOrderClient({ user }: { user: UserProfile }) {
         <DashboardLayout user={user}>
             <div className="space-y-6 pb-10">
                 {/* Header gradient */}
-                <div className="bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-800 rounded-2xl p-6 text-white">
+                <div className="bg-gradient-to-r from-indigo-600 via-indigo-600 to-indigo-800 rounded-2xl p-6 text-white">
                     <div className="flex items-center gap-3 mb-1">
                         <span className="text-3xl">🍕</span>
                         <h1 className="text-2xl font-bold">Food Near You</h1>
                     </div>
-                    <p className="text-emerald-100 text-sm">
+                    <p className="text-indigo-100 text-sm">
                         Affordable eats for uni students · Sorted by price &amp; rating
                     </p>
                 </div>
