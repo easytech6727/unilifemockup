@@ -1,9 +1,10 @@
 'use client'
 
-import { Wallet, Hotel, Car, Utensils, ShieldCheck, Star, CheckCircle2, AlertTriangle, MapPin, Navigation } from 'lucide-react'
+import { Wallet, Hotel, Car, Utensils, ShieldCheck, Star, CheckCircle2, AlertTriangle, MapPin, Navigation, Cloud } from 'lucide-react'
 import type { TripPlan } from './types'
 import TripPlanExportBar from './TripPlanExportBar'
 import dynamic from 'next/dynamic'
+import WeatherForecast from './WeatherForecast'
 
 const TripMap = dynamic(() => import('./TripMap'), { 
   ssr: false,
@@ -16,11 +17,13 @@ export default function TripPlanDisplay({
   tripPlan,
   actions,
   shareUrl,
+  startDate,
 }: {
   tripPlan: TripPlan
   actions?: React.ReactNode
   /** Absolute URL to this trip (e.g. after save); enables copy link and richer sharing. */
   shareUrl?: string | null
+  startDate?: string | null
 }) {
   return (
     <div className="space-y-5">
@@ -32,6 +35,7 @@ export default function TripPlanDisplay({
           <p className="text-gray-600 text-sm mt-1.5">
             {tripPlan.days} days · {tripPlan.travelers} traveler{tripPlan.travelers > 1 ? 's' : ''} ·{' '}
             {tripPlan.tier} zone · {formatLKR(tripPlan.perPersonBudget)}/person
+            {startDate ? ` · starts ${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
           </p>
         </div>
         {actions}
@@ -75,6 +79,13 @@ export default function TripPlanDisplay({
         </div>
       </div>
 
+      {/* Weather Forecast - Innovative Feature */}
+      <WeatherForecast 
+        destination={tripPlan.destination} 
+        startDate={startDate ? new Date(startDate) : undefined}
+        days={tripPlan.days} 
+      />
+
       <div className="grid md:grid-cols-3 gap-4">
         {[
           { icon: Hotel, title: 'Stay', desc: tripPlan.hotelReco, amount: tripPlan.breakdown.stay, days: tripPlan.days },
@@ -101,7 +112,7 @@ export default function TripPlanDisplay({
           </h3>
           <p className="text-[11px] text-gray-500 font-medium bg-white px-2 py-0.5 rounded-full border border-gray-100">Live Preview</p>
         </div>
-        <div className="aspect-[16/7] w-full bg-gray-50 relative group">
+        <div className="w-full bg-gray-50 relative group overflow-hidden rounded-b-2xl" style={{ aspectRatio: '16 / 7', minHeight: '300px' }}>
            {/* Interactive Leaflet Map */}
            <TripMap 
               points={tripPlan.dailyPlan.flatMap(d => d.timeline || []).map(t => ({ 
@@ -112,7 +123,7 @@ export default function TripPlanDisplay({
               destination={tripPlan.destination} 
            />
            
-           <div className="absolute bottom-4 right-4 z-[400]">
+           <div className="absolute bottom-6 right-6 z-[400]">
               <a
                 href={(() => {
                   const timeline = tripPlan.dailyPlan.flatMap(d => d.timeline || [])
@@ -140,9 +151,12 @@ export default function TripPlanDisplay({
                 })()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-3 py-1.5 bg-white/90 backdrop-blur-sm text-secondary rounded-lg font-bold text-[11px] shadow-lg border border-indigo-100 hover:bg-white transition-all hover:scale-105 active:scale-95"
+                className="flex items-center gap-2.5 px-5 py-3 bg-gradient-to-r from-primary to-indigo-600 text-white rounded-xl font-bold text-sm shadow-xl shadow-primary/40 border border-white/20 hover:shadow-2xl hover:shadow-primary/50 transition-all hover:scale-110 active:scale-100 backdrop-blur-sm"
               >
-                <Navigation size={12} strokeWidth={3} /> Open Google Maps
+                <div className="flex items-center justify-center bg-white/20 rounded-lg p-1.5">
+                  <Navigation size={18} strokeWidth={2.5} />
+                </div>
+                <span>Open Google Maps</span>
               </a>
            </div>
         </div>

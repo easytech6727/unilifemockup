@@ -151,9 +151,12 @@ export default function SavedTripDetailClient({ tripId }: { tripId: number }) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-stretch gap-2 lg:shrink-0 lg:pt-1">
-            <Link href={`/trip-planner/${trip.id}/edit`} className="btn-primary flex-1 min-w-[8rem] sm:flex-none">
-              <Pencil size={18} />
+          <div className="flex items-center gap-3 lg:shrink-0 lg:pt-1">
+            <Link
+              href={`/trip-planner/${trip.id}/edit`}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition hover:bg-indigo-600 hover:shadow-md"
+            >
+              <Pencil size={15} />
               Edit trip
             </Link>
             <button
@@ -162,9 +165,9 @@ export default function SavedTripDetailClient({ tripId }: { tripId: number }) {
                 setDeleteOpen(true)
                 setDeleteError(null)
               }}
-              className="btn-danger-outline flex-1 min-w-[8rem] sm:flex-none"
+              className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 hover:border-red-300"
             >
-              <Trash2 size={18} />
+              <Trash2 size={15} />
               Delete
             </button>
           </div>
