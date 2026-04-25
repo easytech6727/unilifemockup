@@ -2,12 +2,13 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import Link from 'next/link'
-import { MapPin, Search, Loader2, Wallet, ChevronRight, Sparkles, CheckCircle2, AlertTriangle, XCircle, Info, TrendingUp } from 'lucide-react'
+import { MapPin, Search, Loader2, Wallet, ChevronRight, Sparkles, CheckCircle2, AlertTriangle, XCircle, Info, TrendingUp, Calendar, Users, Clock } from 'lucide-react'
 import AttractionList, { type Place } from './AttractionList'
 import ItineraryList, { type ItineraryPlace } from './ItineraryList'
 import LocationAutocompleteInput from './LocationAutocompleteInput'
 import TripPlanDisplay from './TripPlanDisplay'
 import SavedTripsSection from './SavedTripsSection'
+import WeatherForecast from './WeatherForecast'
 import { isTripPlan, type TripPlan } from './types'
 
 type Step = 'search' | 'attractions' | 'budget' | 'plan'
@@ -20,6 +21,7 @@ export default function TripPlannerClient({ editTripId }: { editTripId?: number 
   const [daysInput, setDaysInput] = useState('1')
   const [travelers, setTravelers] = useState(1)
   const [travelersInput, setTravelersInput] = useState('1')
+  const [tripDate, setTripDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [distanceKm, setDistanceKm] = useState<number | null>(null)
   const [distanceLoading, setDistanceLoading] = useState(false)
   const [places, setPlaces] = useState<Place[]>([])
@@ -165,12 +167,22 @@ export default function TripPlannerClient({ editTripId }: { editTripId?: number 
   }, [])
 
   // Client-side validation
+  const isPastDate = (dateStr: string) => {
+    const selected = new Date(`${dateStr}T00:00:00`)
+    selected.setHours(0, 0, 0, 0)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return selected < today
+  }
+
   const validateInputs = useCallback((): string | null => {
     const destTrimmed = destination.trim()
     if (!destTrimmed) return 'Please enter a destination'
     if (!/^[a-zA-Z\s,.-]+$/.test(destTrimmed) || destTrimmed.length < 2) {
       return 'Destination must contain only letters (no numbers or symbols)'
     }
+    if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(tripDate)) return 'Please select a valid trip date'
+    if (isPastDate(tripDate)) return 'Trip date cannot be in the past'
     if (days < 1 || days > 30) return 'Trip duration must be between 1 and 30 days'
     if (travelers < 1 || travelers > 20) return 'Number of travelers must be between 1 and 20'
     
@@ -180,7 +192,7 @@ export default function TripPlannerClient({ editTripId }: { editTripId?: number 
     if (budget > 1000000) return 'Maximum budget is LKR 1,000,000'
     
     return null
-  }, [destination, days, travelers, totalBudget])
+  }, [destination, days, travelers, totalBudget, tripDate])
 
   // Budget validation with AI
   const validateBudget = useCallback(async () => {
@@ -263,6 +275,7 @@ export default function TripPlannerClient({ editTripId }: { editTripId?: number 
           days,
           distanceKm: distanceKm ?? 0,
           places: itinerary.map(p => p.name),
+          startDate: tripDate,
         }),
       })
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || 'Plan generation failed') }
@@ -384,19 +397,34 @@ export default function TripPlannerClient({ editTripId }: { editTripId?: number 
             const done =
               ['search', 'attractions', 'budget', 'plan'].indexOf(s) <
               ['search', 'attractions', 'budget', 'plan'].indexOf(step)
+            
+            // Allow navigation to this step if it's done or if it's the current step
+            const canNavigate = done || active || 
+              (s === 'attractions' && step === 'search' && destination.trim()) ||
+              (s === 'budget' && (step === 'attractions' || step === 'budget') && itinerary.length > 0) ||
+              (s === 'plan' && step === 'budget' && totalBudget && tripPlan)
+            
             return (
               <div key={s} className="flex items-center gap-2 shrink-0">
                 {i > 0 && <ChevronRight size={16} className="text-slate-300" />}
-                <div className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold whitespace-nowrap border transition ${
-                  active
-                    ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20'
-                    : done
-                      ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                }`}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (canNavigate) setStep(s)
+                  }}
+                  disabled={!canNavigate}
+                  className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold whitespace-nowrap border transition cursor-pointer ${
+                    active
+                      ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20'
+                      : done
+                        ? 'bg-emerald-50 text-emerald-900 border-emerald-200 hover:bg-emerald-100 cursor-pointer'
+                        : canNavigate
+                          ? 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 cursor-pointer'
+                          : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                  }`}>
                   {done && <CheckCircle2 size={16} className={active ? 'text-white' : 'text-emerald-600'} />}
                   {labels[i]}
-                </div>
+                </button>
               </div>
             )
           })}
@@ -411,125 +439,137 @@ export default function TripPlannerClient({ editTripId }: { editTripId?: number 
 
       {/* ── STEP 1: SEARCH ── */}
       {step === 'search' && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0 space-y-3">
-              <div className="inline-flex items-center gap-3 rounded-2xl bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 border border-indigo-100">
-                <MapPin size={18} /> Start with your destination
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+            {/* Header */}
+            <div className="mb-6">
+              <div className="inline-flex items-center gap-2 rounded-xl bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 border border-indigo-100 mb-3">
+                <MapPin size={14} /> Plan your journey
               </div>
-              <div>
-                <h2 className="text-3xl font-semibold tracking-tight text-slate-900">Plan a smarter trip</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                  Enter your start point and destination, then refine days, travelers and attractions for a polished itinerary.
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900">Where are you headed?</h2>
+              <p className="mt-1.5 text-sm text-slate-500">
+                Enter your route, set your dates and travelers — we'll handle the rest.
+              </p>
+            </div>
+
+            {/* Location Inputs */}
+            <div className="grid gap-4 lg:grid-cols-2 mb-5">
+              <LocationAutocompleteInput label="Start location" value={startLocation} onChange={setStartLocation} placeholder="e.g. Colombo" />
+              <LocationAutocompleteInput label="Destination" value={destination} onChange={setDestination} placeholder="e.g. Kandy" />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {[
+                { label: 'Days', value: days, input: daysInput, setInput: setDaysInput, onChange: (v: number) => { setDays(v); setDaysInput(String(v)) } },
+                { label: 'Travelers', value: travelers, input: travelersInput, setInput: setTravelersInput, onChange: (v: number) => { setTravelers(v); setTravelersInput(String(v)) } },
+              ].map(({ label, value, input, setInput, onChange }) => (
+                <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <p className="text-xs font-semibold text-slate-600 mb-3 uppercase tracking-wide">{label}</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onChange(Math.max(1, value - 1))}
+                      className="flex-shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-lg font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={input}
+                      onChange={e => setInput(e.target.value)}
+                      onBlur={() => { const v = Math.max(1, parseInt(input) || 1); onChange(v) }}
+                      className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-center text-base font-semibold text-slate-900 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onChange(value + 1)}
+                      className="flex-shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-primary/20 bg-primary text-white shadow-sm transition hover:bg-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-semibold text-slate-600 mb-3 uppercase tracking-wide">Trip date</p>
+                <input
+                  type="date"
+                  value={tripDate}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={e => setTripDate(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-sm font-semibold text-slate-900 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+                {isPastDate(tripDate) && (
+                  <p className="mt-2 text-xs text-red-600">Trip date cannot be in the past.</p>
+                )}
+              </div>
+            </div>
+
+            {destination && (
+              <div className="mt-5 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
+                <p className="text-sm text-emerald-800">
+                  <span className="font-semibold">{destination}</span> selected — click <span className="font-semibold">Search Attractions</span> in the sidebar to continue.
                 </p>
               </div>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4 shadow-sm border border-slate-200">
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 font-semibold mb-2">Quick stats</p>
-              <div className="grid grid-cols-2 gap-3 text-sm text-slate-700">
-                <div>
-                  <p className="text-xs uppercase text-slate-400">Days</p>
-                  <p className="font-semibold">{days}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase text-slate-400">Travelers</p>
-                  <p className="font-semibold">{travelers}</p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
-          <div className="mt-8 grid gap-5 lg:grid-cols-2">
-            <LocationAutocompleteInput label="Start location" value={startLocation} onChange={setStartLocation} placeholder="e.g. Colombo" />
-            <LocationAutocompleteInput label="Destination" value={destination} onChange={setDestination} placeholder="e.g. Kandy" />
-          </div>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {[
-              { label: 'Days', value: days, input: daysInput, setInput: setDaysInput, onChange: (v: number) => { setDays(v); setDaysInput(String(v)) } },
-              { label: 'Travelers', value: travelers, input: travelersInput, setInput: setTravelersInput, onChange: (v: number) => { setTravelers(v); setTravelersInput(String(v)) } },
-            ].map(({ label, value, input, setInput, onChange }) => (
-              <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm font-medium text-slate-700 mb-3">{label}</p>
+          <aside className="space-y-4">
+            {/* Trip summary card */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400 mb-4">Trip overview</p>
+              <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onChange(Math.max(1, value - 1))}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-xl font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-                  >
-                    −
-                  </button>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onBlur={() => { const v = Math.max(1, parseInt(input) || 1); onChange(v) }}
-                    className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-lg font-semibold text-slate-900 shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => onChange(value + 1)}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-primary/20 bg-primary text-white shadow-sm transition hover:bg-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2"
-                  >
-                    +
-                  </button>
+                  <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600 border border-indigo-100">
+                    <Calendar size={14} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Duration</p>
+                    <p className="text-sm font-semibold text-slate-900">{days} day{days > 1 ? 's' : ''}</p>
+                  </div>
                 </div>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-violet-50 p-2 text-violet-600 border border-violet-100">
+                    <Users size={14} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Travelers</p>
+                    <p className="text-sm font-semibold text-slate-900">{travelers} person{travelers > 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 border border-emerald-100">
+                    <Clock size={14} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Start date</p>
+                    <p className="text-sm font-semibold text-slate-900">{new Date(tripDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                  </div>
+                </div>
+                {destination && startLocation && (
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-amber-50 p-2 text-amber-600 border border-amber-100">
+                      <MapPin size={14} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400">{startLocation} → {destination}</p>
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-
-          <div className="mt-6 flex justify-center sm:justify-start">
-            <button
-              type="button"
-              onClick={fetchDistanceAndPlaces}
-              disabled={placesLoading || distanceLoading}
-              className="btn-primary-lg w-full sm:w-auto disabled:cursor-not-allowed"
-            >
-              {placesLoading ? <Loader2 size={20} className="animate-spin" /> : <Search size={20} />}
-              Find attractions
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── STEP 2: ATTRACTIONS & ITINERARY ── */}
-      {step === 'attractions' && (
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_0.85fr]">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">Attractions near {destination}</h2>
-                {distanceKm && <p className="mt-2 text-sm text-slate-500">Distance estimate: <span className="font-semibold text-slate-900">{distanceKm} km</span></p>}
-              </div>
-              <button
-                type="button"
-                onClick={() => setStep('search')}
-                className="btn-outline rounded-xl px-4 py-2 text-sm"
-              >
-                ← Change destination
-              </button>
             </div>
 
-            <div className="mt-6">
-              <h3 className="mb-4 text-lg font-semibold text-slate-900">Nearby attractions</h3>
-              <AttractionList places={places} loading={placesLoading} onAdd={addToItinerary} addedIds={addedIds} />
-            </div>
-          </div>
-
-          <aside className="space-y-5">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-card">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm text-slate-500">Itinerary</p>
-                  <p className="text-2xl font-semibold text-slate-900">{itinerary.length} stops</p>
-                </div>
-                <div className="rounded-2xl bg-white p-3 text-primary shadow-sm border border-slate-200">
-                  <Wallet size={22} />
-                </div>
-              </div>
-              <p className="mt-4 text-sm text-slate-600">Add the best stops to your itinerary, then continue to build your budget and full plan.</p>
-            </div>
+            {/* Weather preview */}
+            {destination && (
+              <WeatherForecast
+                destination={destination}
+                startDate={tripDate ? new Date(tripDate + 'T00:00:00') : undefined}
+                days={Math.min(days, 7)}
+              />
+            )}
 
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
               <div className="flex items-center justify-between mb-4">
@@ -551,20 +591,118 @@ export default function TripPlannerClient({ editTripId }: { editTripId?: number 
                   <span className="text-slate-500">Days</span>
                   <span className="font-medium text-slate-900">{days}</span>
                 </div>
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <span className="text-slate-500">Travelers</span>
                   <span className="font-medium text-slate-900">{travelers}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-slate-500">Start date</span>
+                  <span className="font-medium text-slate-900">{new Date(tripDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 </div>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setStep('budget')}
-              className="btn-primary-lg w-full sm:w-auto"
-            >
-              <Wallet size={18} /> Set budget
-            </button>
+            {!startLocation || !destination ? (
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  disabled
+                  className="btn-primary-lg w-full sm:w-auto opacity-50 cursor-not-allowed"
+                >
+                  <Search size={18} /> Search Attractions
+                </button>
+                <p className="text-sm text-amber-600 font-medium">
+                  ⚠️ Please select both start location and destination to continue
+                </p>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={fetchDistanceAndPlaces}
+                disabled={placesLoading}
+                className="btn-primary-lg w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {placesLoading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
+                {placesLoading ? 'Searching...' : 'Search Attractions'}
+              </button>
+            )}
+          </aside>
+        </div>
+      )}
+
+      {/* ── STEP 2: ATTRACTIONS ── */}
+      {step === 'attractions' && (
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600 border border-indigo-100">
+                <MapPin size={20} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Pick your attractions</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  Add places you want to visit in <span className="font-semibold">{destination}</span> to your itinerary.
+                </p>
+              </div>
+            </div>
+
+            <AttractionList places={places} loading={placesLoading} onAdd={addToItinerary} addedIds={addedIds} />
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setStep('search')}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
+              >
+                ← Back
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep('budget')}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-600"
+              >
+                <Wallet size={16} /> Set budget
+              </button>
+            </div>
+          </div>
+
+          <aside className="space-y-5">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-card">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-sm text-slate-500">Your itinerary</p>
+                  <p className="text-2xl font-semibold text-slate-900">{itinerary.length} stop{itinerary.length !== 1 ? 's' : ''}</p>
+                </div>
+                <div className="rounded-2xl bg-white p-3 text-primary shadow-sm border border-slate-200">
+                  <Wallet size={22} />
+                </div>
+              </div>
+              <ItineraryList places={itinerary} onRemove={removeFromItinerary} />
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+              <p className="text-sm font-semibold uppercase tracking-[0.26em] text-slate-500 mb-3">Trip details</p>
+              <div className="space-y-3 text-sm text-slate-700">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <span className="text-slate-500">Destination</span>
+                  <span className="font-medium text-slate-900">{destination}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <span className="text-slate-500">Days</span>
+                  <span className="font-medium text-slate-900">{days}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <span className="text-slate-500">Travelers</span>
+                  <span className="font-medium text-slate-900">{travelers}</span>
+                </div>
+                {distanceKm != null && (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-slate-500">Distance</span>
+                    <span className="font-medium text-slate-900">{distanceKm.toLocaleString()} km</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </aside>
         </div>
       )}
@@ -763,6 +901,7 @@ export default function TripPlannerClient({ editTripId }: { editTripId?: number 
         <div className="space-y-5">
           <TripPlanDisplay
             tripPlan={tripPlan}
+            startDate={tripDate}
             shareUrl={
               origin && resolvedTripId != null ? `${origin}/trip-planner/${resolvedTripId}` : null
             }
