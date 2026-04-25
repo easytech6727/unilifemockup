@@ -84,17 +84,17 @@ function CartItemRow({ item, onInc, onDec, onRemove }: { item: CartItem; onInc: 
             exit={{ opacity: 0, x: 10, height: 0 }}
             className="flex items-center gap-3 py-4 border-b border-gray-50 last:border-0"
         >
-            <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">{item.emoji}</div>
+            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">{item.emoji}</div>
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 line-clamp-1">{item.name}</p>
-                <p className="text-sm font-bold text-orange-500 mt-0.5">Rs {(item.price * item.qty).toFixed(2)}</p>
+                <p className="text-sm font-bold text-indigo-500 mt-0.5">Rs {(item.price * item.qty).toFixed(2)}</p>
             </div>
             <div className="flex items-center gap-2">
                 <button onClick={onDec} className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition-colors">
                     <Minus size={14} />
                 </button>
                 <span className="w-6 text-center text-sm font-bold">{item.qty}</span>
-                <button onClick={onInc} className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center hover:bg-orange-600 transition-colors">
+                <button onClick={onInc} className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors">
                     <Plus size={14} />
                 </button>
                 <button onClick={onRemove} className="w-8 h-8 ml-1 rounded-full text-red-400 hover:bg-red-50 flex items-center justify-center transition-colors">
@@ -126,7 +126,7 @@ function SuccessModal({ shopName, onClose }: { shopName: string; onClose: () => 
                 <div className="mt-4 bg-gray-50 rounded-xl p-3 text-sm text-gray-600">
                     📍 Estimated arrival: <strong>15–20 min</strong>
                 </div>
-                <button onClick={onClose} className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition-colors">
+                <button onClick={onClose} className="mt-6 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded-xl transition-colors">
                     Done
                 </button>
             </motion.div>
@@ -346,7 +346,7 @@ export default function OrderClient({ user, shopId }: { user: UserProfile; shopI
                             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                             className="fixed top-4 right-4 z-50"
                         >
-                            <div className="flex items-center gap-2 bg-orange-500 text-white px-4 py-3 rounded-full shadow-lg animate-pulse">
+                            <div className="flex items-center gap-2 bg-indigo-500 text-white px-4 py-3 rounded-full shadow-lg animate-pulse">
                                 <motion.div
                                     animate={{ rotate: [0, -15, 15, -15, 0] }}
                                     transition={{ duration: 0.5, repeat: 2 }}
@@ -382,12 +382,12 @@ export default function OrderClient({ user, shopId }: { user: UserProfile; shopI
                             <button
                                 key={opt.id}
                                 onClick={() => setDeliveryMode(opt.id as 'delivery' | 'pickup')}
-                                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${deliveryMode === opt.id ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-white hover:border-orange-300'
+                                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${deliveryMode === opt.id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-indigo-300'
                                     }`}
                             >
-                                <opt.icon size={24} className={deliveryMode === opt.id ? 'text-orange-500' : 'text-gray-400'} />
+                                <opt.icon size={24} className={deliveryMode === opt.id ? 'text-indigo-500' : 'text-gray-400'} />
                                 <div className="text-center">
-                                    <p className={`text-sm font-semibold ${deliveryMode === opt.id ? 'text-orange-600' : 'text-gray-700'}`}>{opt.label}</p>
+                                    <p className={`text-sm font-semibold ${deliveryMode === opt.id ? 'text-indigo-600' : 'text-gray-700'}`}>{opt.label}</p>
                                     <p className="text-xs text-gray-400">{opt.eta}</p>
                                 </div>
                             </button>
@@ -406,7 +406,7 @@ export default function OrderClient({ user, shopId }: { user: UserProfile; shopI
                             <div className="py-12 text-center">
                                 <ShoppingBag className="w-12 h-12 text-gray-200 mx-auto mb-3" />
                                 <p className="text-gray-400 text-sm">Your cart is empty</p>
-                                <button onClick={() => router.back()} className="mt-3 text-sm text-orange-500 hover:underline">
+                                <button onClick={() => router.back()} className="mt-3 text-sm text-indigo-500 hover:underline">
                                     Add items from shop
                                 </button>
                             </div>
@@ -432,7 +432,7 @@ export default function OrderClient({ user, shopId }: { user: UserProfile; shopI
                     <textarea
                         value={notes} onChange={(e) => setNotes(e.target.value)}
                         placeholder="e.g. Less spicy, no onions…" rows={3}
-                        className="w-full text-sm text-gray-700 border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                        className="w-full text-sm text-gray-700 border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
                     />
                 </div>
 
@@ -445,7 +445,7 @@ export default function OrderClient({ user, shopId }: { user: UserProfile; shopI
                                 key={p.id}
                                 type="button"
                                 onClick={() => setPaymentMethod(p.id as 'cod' | 'card' | 'wallet')}
-                                className={`px-3 py-2 rounded-xl border text-sm font-medium transition-colors ${paymentMethod === p.id ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-600 hover:border-orange-300'}`}
+                                className={`px-3 py-2 rounded-xl border text-sm font-medium transition-colors ${paymentMethod === p.id ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-indigo-300'}`}
                             >
                                 {p.label}
                             </button>
@@ -511,7 +511,7 @@ export default function OrderClient({ user, shopId }: { user: UserProfile; shopI
                             placeholder="0712345678"
                             inputMode="numeric"
                             maxLength={10}
-                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                         />
                         <p className="text-xs text-gray-400 mt-1">Sri Lankan mobile</p>
                     </div>
@@ -527,7 +527,7 @@ export default function OrderClient({ user, shopId }: { user: UserProfile; shopI
                                     onChange={(e) => setDeliveryAddress(e.target.value)}
                                     rows={2}
                                     placeholder="Hostel / Room / Street..."
-                                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
                                 />
                             </div>
                             <div>
@@ -536,7 +536,7 @@ export default function OrderClient({ user, shopId }: { user: UserProfile; shopI
                                     value={mapLink}
                                     onChange={(e) => setMapLink(e.target.value)}
                                     placeholder="https://maps.google.com/..."
-                                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                                 />
                             </div>
                         </>
@@ -551,7 +551,7 @@ export default function OrderClient({ user, shopId }: { user: UserProfile; shopI
                         <div className="flex justify-between"><span>Delivery fee</span><span>{fee === 0 ? 'Free' : `Rs ${fee.toFixed(2)}`}</span></div>
                         <div className="flex justify-between font-bold text-gray-900 text-base border-t border-gray-100 pt-2 mt-2">
                             <span>Total</span>
-                            <span className="text-orange-500">Rs {total.toFixed(2)}</span>
+                            <span className="text-indigo-500">Rs {total.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
@@ -561,7 +561,7 @@ export default function OrderClient({ user, shopId }: { user: UserProfile; shopI
                     whileTap={{ scale: 0.97 }}
                     onClick={placeOrder}
                     disabled={placing || cart.length === 0 || (deliveryMode === 'delivery' && !deliveryAvailable)}
-                    className={`w-full py-4 rounded-2xl font-bold text-white text-base shadow-md transition-all ${cart.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-orange-500 hover:bg-orange-600 active:bg-orange-700'
+                    className={`w-full py-4 rounded-2xl font-bold text-white text-base shadow-md transition-all ${cart.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700'
                         }`}
                 >
                     {placing ? (

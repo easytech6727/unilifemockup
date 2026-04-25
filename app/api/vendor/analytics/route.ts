@@ -1,45 +1,116 @@
 import { NextResponse } from 'next/server'
 import { verifyRole } from '@/lib/auth.server'
 import { createClient } from '@/lib/supabase/server'
+import { getAdminClient } from '@/lib/supabase/admin'
 
 /** GET /api/vendor/analytics — real sales stats for vendor (food or laundry) */
 export async function GET() {
   try {
     const user = await verifyRole('vendor')
-    if (!user) return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
+    if (!user) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
+    }
 
     const email = user.email?.toLowerCase()
     if (!email) return NextResponse.json({ stats: [], chartData: [], topProducts: [], statusDistribution: [] })
 
-    const client = await createClient()
+    let client: Awaited<ReturnType<typeof createClient>>
+    try {
+      // Prefer admin client to avoid RLS-related read failures in analytics.
+      client = getAdminClient() as unknown as Awaited<ReturnType<typeof createClient>>
+    } catch {
+      client = await createClient()
+    }
     const today = new Date().toISOString().slice(0, 10)
 
+    let stallIds: Array<number | string> = []
+    let shopIds: Array<number | string> = []
+    let shouldUseFood = false
+    let shouldUseLaundry = false
+
     if (user.role === 'vendor-food') {
-      const { data: stalls } = await client.from('food_stalls').select('id').eq('owner_email', email)
-      const stallIds = (stalls ?? []).map((s) => s.id)
+      const { data: foodStalls, error: foodStallsError } = await client
+        .from('food_stalls')
+        .select('id')
+        .ilike('owner_email', email)
+
+      if (foodStallsError) {
+        return NextResponse.json({ stats: [], chartData: [], topProducts: [], statusDistribution: [], message: foodStallsError.message })
+      }
+
+      stallIds = (foodStalls ?? []).map((s) => s.id)
+      shouldUseFood = true
+    } else if (user.role === 'vendor-laundry') {
+      const { data: laundryShops, error: laundryShopsError } = await client
+        .from('laundry_shops')
+        .select('id')
+        .ilike('owner_email', email)
+
+      if (laundryShopsError) {
+        return NextResponse.json({ stats: [], chartData: [], topProducts: [], statusDistribution: [], message: laundryShopsError.message })
+      }
+
+      shopIds = (laundryShops ?? []).map((s) => s.id)
+      shouldUseLaundry = true
+    } else {
+      // Generic vendor fallback: attempt both lookups, prefer food when both exist.
+      const { data: foodStalls, error: foodStallsError } = await client
+        .from('food_stalls')
+        .select('id')
+        .ilike('owner_email', email)
+
+      const { data: laundryShops, error: laundryShopsError } = await client
+        .from('laundry_shops')
+        .select('id')
+        .ilike('owner_email', email)
+
+      if (foodStallsError && laundryShopsError) {
+        return NextResponse.json({
+          stats: [],
+          chartData: [],
+          topProducts: [],
+          statusDistribution: [],
+          message: foodStallsError.message || laundryShopsError.message,
+        })
+      }
+
+      stallIds = (foodStalls ?? []).map((s) => s.id)
+      shopIds = (laundryShops ?? []).map((s) => s.id)
+
+      shouldUseFood = stallIds.length > 0
+      shouldUseLaundry = !shouldUseFood && shopIds.length > 0
+    }
+
+    if (shouldUseFood) {
       if (stallIds.length === 0) {
         return NextResponse.json({
           stats: [],
           chartData: [],
           topProducts: [],
           statusDistribution: [],
+          shopType: 'food',
         })
       }
 
-      const { data: allOrders } = await client
+      const { data: allOrders, error: orderError } = await client
         .from('food_orders')
-        .select('id, total_amount, status, created_at, items')
+        .select('*')
         .in('food_stall_id', stallIds)
 
+      if (orderError) {
+        return NextResponse.json({ stats: [], chartData: [], topProducts: [], statusDistribution: [], shopType: 'food', message: orderError.message })
+      }
+
       const orders = allOrders ?? []
+      const getFoodAmount = (o: { total?: number | null; total_amount?: number | null }) => Number(o.total ?? o.total_amount ?? 0) || 0
       const todayOrders = orders.filter((o) => String(o.created_at).slice(0, 10) === today)
-      const todayRevenue = todayOrders.reduce((s, o) => s + (Number(o.total_amount) || 0), 0)
-      const avgOrderValue = orders.length > 0 ? orders.reduce((s, o) => s + (Number(o.total_amount) || 0), 0) / orders.length : 0
+      const todayRevenue = todayOrders.reduce((s, o) => s + getFoodAmount(o), 0)
+      const avgOrderValue = orders.length > 0 ? orders.reduce((s, o) => s + getFoodAmount(o), 0) / orders.length : 0
 
       const weekStart = new Date()
       weekStart.setDate(weekStart.getDate() - 7)
       const weekOrders = orders.filter((o) => new Date(o.created_at) >= weekStart)
-      const weekRevenue = weekOrders.reduce((s, o) => s + (Number(o.total_amount) || 0), 0)
+      const weekRevenue = weekOrders.reduce((s, o) => s + getFoodAmount(o), 0)
 
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
       const chartData: { day: string; revenue: number; orders: number }[] = []
@@ -50,7 +121,7 @@ export async function GET() {
         const dayOrders = orders.filter((o) => String(o.created_at).slice(0, 10) === dayStr)
         chartData.push({
           day: dayNames[d.getDay()],
-          revenue: dayOrders.reduce((s, o) => s + (Number(o.total_amount) || 0), 0),
+          revenue: dayOrders.reduce((s, o) => s + getFoodAmount(o), 0),
           orders: dayOrders.length,
         })
       }
@@ -104,22 +175,25 @@ export async function GET() {
       })
     }
 
-    if (user.role === 'vendor-laundry') {
-      const { data: shops } = await client.from('laundry_shops').select('id').eq('owner_email', email)
-      const shopIds = (shops ?? []).map((s) => s.id)
+    if (shouldUseLaundry) {
       if (shopIds.length === 0) {
         return NextResponse.json({
           stats: [],
           chartData: [],
           topProducts: [],
           statusDistribution: [],
+          shopType: 'laundry',
         })
       }
 
-      const { data: allOrders } = await client
+      const { data: allOrders, error: orderError } = await client
         .from('laundry_orders')
-        .select('id, total, total_amount, status, created_at, service, items_description')
+        .select('*')
         .in('laundry_shop_id', shopIds)
+
+      if (orderError) {
+        return NextResponse.json({ stats: [], chartData: [], topProducts: [], statusDistribution: [], shopType: 'laundry', message: orderError.message })
+      }
 
       const orders = allOrders ?? []
       const getAmount = (o: { total?: number | null; total_amount?: number | null }) => Number(o.total ?? o.total_amount ?? 0) || 0

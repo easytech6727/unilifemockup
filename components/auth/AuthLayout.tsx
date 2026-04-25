@@ -55,7 +55,7 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
             <div className="grid grid-cols-2 gap-x-4 gap-y-6 pt-8">
               {[
                 { label: 'Course Management', icon: <BookOpen size={22} className="text-blue-600" />, color: 'bg-blue-100/80 shadow-blue-200/50' },
-                { label: 'Campus Dining', icon: <UtensilsCrossed size={22} className="text-orange-600" />, color: 'bg-orange-100/80 shadow-orange-200/50' },
+                { label: 'Campus Dining', icon: <UtensilsCrossed size={22} className="text-blue-600" />, color: 'bg-blue-100/80 shadow-blue-200/50' },
                 { label: 'Study Groups', icon: <Users size={22} className="text-emerald-600" />, color: 'bg-emerald-100/80 shadow-emerald-200/50' },
                 { label: 'Campus Transit', icon: <CarFront size={22} className="text-purple-600" />, color: 'bg-purple-100/80 shadow-purple-200/50' },
               ].map((feature, i) => (

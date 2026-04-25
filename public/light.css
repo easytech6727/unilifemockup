@@ -1,33 +1,33 @@
 /* LIGHT MODE - Pure black text */
 
 body.light-mode {
-  background-color: #ffffff;
-  color: #000000;
+  background-color: var(--color-bg-light);
+  color: var(--color-text-light);
 }
 
 /* Text colors */
 .light-mode h1, .light-mode h2, .light-mode h3, .light-mode h4, .light-mode h5, .light-mode h6,
 .light-mode p, .light-mode span, .light-mode label {
-  color: #000000 !important;
+  color: var(--color-text-light) !important;
 }
 
 .light-mode .text-gray-900, .light-mode .text-gray-800, .light-mode .font-bold, .light-mode .font-semibold {
-  color: #000000 !important;
+  color: var(--color-text-light) !important;
 }
 
 .light-mode .text-gray-700, .light-mode .text-gray-600 {
-  color: #1f2937 !important;
+  color: var(--color-text-light-secondary) !important;
 }
 
 .light-mode .text-gray-500, .light-mode .text-gray-400 {
-  color: #4b5563 !important;
+  color: var(--color-text-light-tertiary) !important;
 }
 
 /* Inputs */
 .light-mode input, .light-mode textarea, .light-mode select {
-  background: #f9fafb !important;
-  color: #000000 !important;
-  border: 1px solid #d1d5db !important;
+  background: var(--color-bg-light-secondary) !important;
+  color: var(--color-text-light) !important;
+  border: 1px solid var(--color-border-light-dark) !important;
   border-radius: 8px;
   padding: 12px 16px;
 }
@@ -46,46 +46,46 @@ body.light-mode {
 }
 
 .light-mode select option {
-  background: #f9fafb !important;
-  color: #000000 !important;
+  background: var(--color-bg-light-secondary) !important;
+  color: var(--color-text-light) !important;
 }
 
-/* Focus - blue glow, no color change */
+/* Focus - primary color glow */
 .light-mode input:focus, .light-mode textarea:focus, .light-mode select:focus {
-  box-shadow: 0 0 8px #4f46e5;
-  border: 1px solid #000000 !important;
+  box-shadow: 0 0 8px var(--color-primary);
+  border: 1px solid var(--color-text-light) !important;
   outline: none;
 }
 
 /* Buttons */
 .light-mode .btn-primary, .light-mode button[type="submit"] {
-  background: linear-gradient(135deg, #4f46e5 0%, #818cf8 100%) !important;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%) !important;
   color: #ffffff !important;
   border: none !important;
   border-radius: 8px;
 }
 
 .light-mode button:hover {
-  box-shadow: 0 0 8px #4f46e5;
-  border: 1px solid #000000;
+  box-shadow: 0 0 8px var(--color-primary);
+  border: 1px solid var(--color-text-light);
 }
 
 /* Cards */
 .light-mode .card, .light-mode .glass-card, .light-mode .bg-white {
-  background: #f9fafb !important;
-  border: 1px solid #e5e7eb !important;
+  background: var(--color-bg-light-secondary) !important;
+  border: 1px solid var(--color-border-light) !important;
   border-radius: 12px;
 }
 
 /* Tables */
 .light-mode th {
-  color: #1f2937 !important;
-  border-bottom: 1px solid #e5e7eb !important;
+  color: var(--color-text-light-secondary) !important;
+  border-bottom: 1px solid var(--color-border-light) !important;
 }
 
 .light-mode td {
-  color: #000000 !important;
-  border-bottom: 1px solid #e5e7eb !important;
+  color: var(--color-text-light) !important;
+  border-bottom: 1px solid var(--color-border-light) !important;
 }
 
 /* Scrollbar */

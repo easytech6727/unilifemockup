@@ -80,7 +80,7 @@ export default function LaundryClient({ user }: { user: UserProfile }) {
         <DashboardLayout user={user}>
             <div className="space-y-6 pb-10">
                 {/* Header Section */}
-                <div className="bg-gradient-to-r from-emerald-600 to-green-700 rounded-3xl p-8 text-white shadow-lg relative overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-lg relative overflow-hidden">
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-2xl">🧺</div>

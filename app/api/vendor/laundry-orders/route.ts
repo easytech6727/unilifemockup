@@ -19,7 +19,9 @@ function buildOrderRef() {
 /** GET /api/vendor/laundry-orders — laundry orders for vendor's shops (vendor-laundry only) */
 export async function GET() {
   try {
-    const user = await verifyRole('vendor-laundry')
+    const user =
+      (await verifyRole('vendor-laundry')) ||
+      (await verifyRole('vendor'))
     if (!user) return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
 
     const email = user.email?.toLowerCase()

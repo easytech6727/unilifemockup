@@ -5,7 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 /** GET /api/vendor/food-orders — food orders for vendor's stalls (optionally filtered by stall) */
 export async function GET(request: NextRequest) {
   try {
-    const user = await verifyRole('vendor-food')
+    const user =
+      (await verifyRole('vendor-food')) ||
+      (await verifyRole('vendor'))
     if (!user) return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
 
     const email = user.email?.toLowerCase()

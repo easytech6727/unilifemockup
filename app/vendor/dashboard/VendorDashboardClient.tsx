@@ -100,20 +100,20 @@ export default function VendorDashboardClient({ userName, userRole }: { userName
       return normalized !== 'completed' && normalized !== 'cancelled'
     }).length
   const todayRevenue =
-    foodToday.reduce((s, o) => s + Number(o.total_amount), 0) +
-    laundryToday.reduce((s, o) => s + Number(o.total ?? o.total_amount ?? 0), 0)
+    foodToday.reduce((s, o) => s + (Number(o.total_amount) || 0), 0) +
+    laundryToday.reduce((s, o) => s + (Number(o.total ?? o.total_amount ?? 0) || 0), 0)
   const weekRevenue = foodOrders
     .filter((o) => {
       const d = new Date(o.created_at).getTime()
       return d > Date.now() - 7 * 24 * 60 * 60 * 1000
     })
-    .reduce((s, o) => s + Number(o.total_amount ?? 0), 0)
+    .reduce((s, o) => s + (Number(o.total_amount) || 0), 0)
     + laundryOrders
       .filter((o) => {
         const d = new Date(o.created_at).getTime()
         return d > Date.now() - 7 * 24 * 60 * 60 * 1000
       })
-      .reduce((s, o) => s + Number(o.total ?? o.total_amount ?? 0), 0)
+      .reduce((s, o) => s + (Number(o.total ?? o.total_amount ?? 0) || 0), 0)
 
   if (loading) {
     return (

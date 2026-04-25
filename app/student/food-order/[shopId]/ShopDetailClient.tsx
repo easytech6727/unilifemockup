@@ -71,21 +71,21 @@ function MenuItemCard({ item, onAdd }: { item: MenuItemWithStock; onAdd: (i: Men
                 <div className="flex items-center gap-2">
                     <h4 className="font-medium text-gray-900 text-sm">{item.name}</h4>
                     {item.popular && (
-                        <span className="text-xs bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full font-medium">
+                        <span className="text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-medium">
                             Popular
                         </span>
                     )}
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{item.description}</p>
                 <p className="text-sm font-bold text-gray-900 mt-1">Rs {item.price.toFixed(2)}</p>
-                <p className={`text-xs mt-1 font-semibold ${available ? 'text-emerald-600' : 'text-red-500'}`}>
+                <p className={`text-xs mt-1 font-semibold ${available ? 'text-indigo-600' : 'text-red-500'}`}>
                     {available ? 'Available' : 'This item is not available'}
                 </p>
             </div>
             <button
                 onClick={() => onAdd(item)}
                 disabled={!available}
-                className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors shadow-sm ${available ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors shadow-sm ${available ? 'bg-indigo-500 hover:bg-indigo-600 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             >
                 <Plus size={18} />
             </button>
@@ -252,7 +252,7 @@ export default function ShopDetailClient({ user, shopId }: { user: UserProfile; 
         return (
             <DashboardLayout user={user}>
                 <div className="max-w-3xl mx-auto py-20 flex flex-col items-center justify-center gap-4">
-                    <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+                    <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
                     <p className="text-gray-500">Loading stall details…</p>
                 </div>
             </DashboardLayout>
@@ -264,7 +264,7 @@ export default function ShopDetailClient({ user, shopId }: { user: UserProfile; 
             <DashboardLayout user={user}>
                 <div className="max-w-3xl mx-auto py-20 text-center">
                     <p className="text-red-500 font-medium">{error}</p>
-                    <button onClick={() => router.back()} className="mt-4 text-sm text-emerald-500 hover:underline">
+                    <button onClick={() => router.back()} className="mt-4 text-sm text-indigo-500 hover:underline">
                         Back to Food
                     </button>
                 </div>
@@ -295,7 +295,7 @@ export default function ShopDetailClient({ user, shopId }: { user: UserProfile; 
                             <MapPin size={12} /> {address}
                         </p>
                     </div>
-                    <span className={`absolute top-4 right-4 text-xs font-semibold px-3 py-1 rounded-full ${isOpen ? 'bg-emerald-500 text-white' : 'bg-gray-800 text-gray-200'}`}>
+                    <span className={`absolute top-4 right-4 text-xs font-semibold px-3 py-1 rounded-full ${isOpen ? 'bg-indigo-500 text-white' : 'bg-gray-800 text-gray-200'}`}>
                         {isOpen ? '● Open' : '● Closed'}
                     </span>
                 </div>
@@ -344,7 +344,7 @@ export default function ShopDetailClient({ user, shopId }: { user: UserProfile; 
                             <button
                                 key={cat.id}
                                 onClick={() => setActiveCategory(cat.id)}
-                                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${activeCategory === cat.id ? 'bg-emerald-500 text-white' : 'text-gray-500 hover:bg-gray-100'
+                                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${activeCategory === cat.id ? 'bg-indigo-500 text-white' : 'text-gray-500 hover:bg-gray-100'
                                     }`}
                             >
                                 {cat.emoji} {cat.label}
@@ -369,17 +369,17 @@ export default function ShopDetailClient({ user, shopId }: { user: UserProfile; 
             <div className="fixed bottom-0 left-0 right-0 lg:left-64 p-4 bg-white border-t border-gray-100 shadow-lg z-20">
                 <Link
                     href={orderUrl}
-                    className="flex items-center justify-between w-full max-w-3xl mx-auto bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-3.5 rounded-xl transition-colors shadow-md"
+                    className="flex items-center justify-between w-full max-w-3xl mx-auto bg-indigo-500 hover:bg-indigo-600 text-white font-semibold px-6 py-3.5 rounded-xl transition-colors shadow-md"
                 >
                     <span className="flex items-center gap-2">
                         <ShoppingCart size={20} /> Order Now
                     </span>
                     {cartCount > 0 && (
-                        <span className="bg-white text-emerald-500 text-sm font-bold px-2.5 py-0.5 rounded-full">
+                        <span className="bg-white text-indigo-500 text-sm font-bold px-2.5 py-0.5 rounded-full">
                             {cartCount} added
                         </span>
                     )}
-                    <span className="text-emerald-100 text-sm">View full cart →</span>
+                    <span className="text-indigo-100 text-sm">View full cart →</span>
                 </Link>
             </div>
         </DashboardLayout>
