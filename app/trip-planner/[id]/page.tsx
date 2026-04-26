@@ -41,12 +41,10 @@ export default async function SavedTripPage({ params }: { params: Promise<{ id: 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <header className="bg-white border-b border-gray-200 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-primary">
-            UniLife
-          </Link>
+          <p className="text-sm font-semibold text-slate-900">Trip details</p>
           <Link href="/login" className="text-sm text-gray-600 hover:text-primary">
             Sign in
           </Link>

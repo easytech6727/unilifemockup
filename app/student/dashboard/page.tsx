@@ -15,10 +15,45 @@ import Link from 'next/link'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
+function normalizeDayName(day: unknown): string {
+  const raw = String(day ?? '').trim().toLowerCase()
+  if (!raw) return ''
+  const map: Record<string, string> = {
+    sun: 'Sunday',
+    sunday: 'Sunday',
+    mon: 'Monday',
+    monday: 'Monday',
+    tue: 'Tuesday',
+    tues: 'Tuesday',
+    tuesday: 'Tuesday',
+    wed: 'Wednesday',
+    weds: 'Wednesday',
+    wednesday: 'Wednesday',
+    thu: 'Thursday',
+    thur: 'Thursday',
+    thurs: 'Thursday',
+    thursday: 'Thursday',
+    fri: 'Friday',
+    friday: 'Friday',
+    sat: 'Saturday',
+    saturday: 'Saturday',
+  }
+  return map[raw] ?? (raw.charAt(0).toUpperCase() + raw.slice(1))
+}
+
 function formatTime(t: string): string {
   const s = String(t).trim()
   const part = s.includes('T') ? s.split('T')[1] : s
-  const [h, m] = (part || s).split(':')
+  const clean = (part || s).replace(/\s+/g, ' ')
+  const match12 = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+  if (match12) {
+    const h12 = Number(match12[1])
+    const m12 = Number(match12[2])
+    if (!Number.isNaN(h12) && !Number.isNaN(m12)) {
+      return `${String(h12).padStart(2, '0')}:${String(m12).padStart(2, '0')} ${match12[3].toUpperCase()}`
+    }
+  }
+  const [h, m] = clean.split(':')
   const hour = parseInt(h, 10)
   const min = m ? parseInt(m, 10) : 0
   if (Number.isNaN(hour)) return t
@@ -59,7 +94,7 @@ export default async function StudentDashboard() {
     if (row.entry_type === 'exam' && row.exam_date) {
       return String(row.exam_date).slice(0, 10) === isoToday
     }
-    return row.day_of_week === today
+    return normalizeDayName(row.day_of_week) === today
   })
 
   // 2. Fetch Trips - total count and recent 3
@@ -146,7 +181,11 @@ export default async function StudentDashboard() {
               ) : (
                 timetableEntries.map((entry) => {
                   const status = getStatus(entry.start_time, entry.end_time)
-                  const title = entry.course_name ? `${entry.course_code || ''} - ${entry.course_name}`.trim() : `Course #${entry.course_id}`
+                  const title = entry.subject
+                    ? String(entry.subject)
+                    : entry.course_name
+                      ? `${entry.course_code || ''} - ${entry.course_name}`.trim()
+                      : `Course #${entry.course_id}`
                   return (
                     <ScheduleItem
                       key={entry.id}

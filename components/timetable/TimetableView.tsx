@@ -75,9 +75,29 @@ function getMinFromTime(timeStr: string): number {
 }
 
 function normalizeDay(day: string): string {
-  const d = (day || '').trim()
+  const d = (day || '').trim().toLowerCase()
   if (!d) return ''
-  return d.charAt(0).toUpperCase() + d.slice(1).toLowerCase()
+  const map: Record<string, string> = {
+    mon: 'Monday',
+    monday: 'Monday',
+    tue: 'Tuesday',
+    tues: 'Tuesday',
+    tuesday: 'Tuesday',
+    wed: 'Wednesday',
+    weds: 'Wednesday',
+    wednesday: 'Wednesday',
+    thu: 'Thursday',
+    thur: 'Thursday',
+    thurs: 'Thursday',
+    thursday: 'Thursday',
+    fri: 'Friday',
+    friday: 'Friday',
+    sat: 'Saturday',
+    saturday: 'Saturday',
+    sun: 'Sunday',
+    sunday: 'Sunday',
+  }
+  return map[d] ?? (d.charAt(0).toUpperCase() + d.slice(1))
 }
 
 function isoLocalDate(d: Date): string {

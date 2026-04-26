@@ -50,12 +50,10 @@ export default async function EditTripPage({ params }: { params: Promise<{ id: s
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <header className="bg-white border-b border-gray-200 py-4 px-6">
         <div className="max-w-7xl mx-auto">
-          <Link href="/" className="text-xl font-bold text-primary">
-            UniLife
-          </Link>
+          <p className="text-sm font-semibold text-slate-900">Edit trip</p>
         </div>
       </header>
       <main className="max-w-7xl mx-auto py-8 px-6">{content}</main>

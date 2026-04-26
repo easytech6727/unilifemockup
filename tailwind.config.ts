@@ -31,13 +31,13 @@ const config: Config = {
         sans: ['Inter', 'sans-serif'],
       },
       borderRadius: {
-        'card': '16px',
+        'card': '12px',
       },
       boxShadow: {
-        'card': '0 8px 32px rgba(0, 0, 0, 0.3)',
-        'card-hover': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-        'glow': '0 0 40px rgba(79, 70, 229, 0.3)',
-        'glow-lg': '0 0 60px rgba(79, 70, 229, 0.4)',
+        'card': '0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 24px rgba(15, 23, 42, 0.06)',
+        'card-hover': '0 1px 2px rgba(15, 23, 42, 0.08), 0 16px 30px rgba(15, 23, 42, 0.1)',
+        'glow': '0 0 22px rgba(79, 70, 229, 0.2)',
+        'glow-lg': '0 0 36px rgba(79, 70, 229, 0.24)',
       },
       backgroundImage: {
         'gradient-primary':

@@ -338,7 +338,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
   }, [isVendorRole, user.role])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Top navigation progress bar */}
       <AnimatePresence>
         {isNavigating && (
@@ -369,7 +369,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
       <aside
         className={`
           fixed top-0 left-0 z-50 h-full w-64 border-r
-          ${isDeliveryUI ? 'bg-gradient-to-b from-blue-50 to-blue-50/80 border-blue-200/40' : 'bg-gradient-to-b from-blue-50 to-blue-50/80 border-blue-200/40'}
+          ${isDeliveryUI ? 'bg-white border-gray-200' : 'bg-white border-gray-200'}
           transform transition-transform duration-200 ease-in-out
           lg:translate-x-0
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -377,12 +377,12 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between p-5 border-b border-blue-200/40">
+          <div className="flex items-center justify-between p-5 border-b border-gray-200">
             <Link href={`/${pathSegment}/dashboard`} className="flex items-center gap-3 hover:opacity-80 transition">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-200">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-primary shadow-sm">
                 <GraduationCap className="w-5 h-5 text-white" />
               </div>
-              <span className="text-lg font-bold font-display tracking-[-0.018em] text-blue-900">UniLife</span>
+              <span className="text-lg font-bold font-display tracking-[-0.018em] text-slate-900">UniLife</span>
             </Link>
             <button
               onClick={() => setIsSidebarOpen(false)}
@@ -402,10 +402,10 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
                     <Link
                       href={item.href}
                       onClick={() => handleNavigation(item.href)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border-l-4 transition-all duration-200 ${
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border-l-2 transition-all duration-200 ${
                         isActive
-                          ? 'border-blue-500 bg-white text-blue-700 font-semibold shadow-sm shadow-blue-100'
-                          : 'border-transparent text-gray-600 hover:bg-white/60 hover:text-gray-700'
+                          ? 'border-primary bg-primary/5 text-primary font-semibold shadow-sm'
+                          : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                       } ${
                         isNavigating && navigatingTo === item.href ? 'opacity-60 cursor-wait' : ''
                       }`}
@@ -420,11 +420,11 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
           </nav>
 
           {/* User profile section */}
-          <div className="p-5 border-t border-blue-200/40">
+          <div className="p-5 border-t border-gray-200">
             <div className="relative">
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="w-full flex items-center gap-3 p-2.5 rounded-xl transition-colors hover:bg-white/60"
+                className="w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors hover:bg-gray-50"
               >
                 <div className="w-11 h-11 rounded-2xl flex items-center justify-center ring-2 bg-white ring-blue-200 shadow-sm">
                   {user.avatar_url ? (
@@ -485,7 +485,7 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
       {/* Main content */}
       <div className="lg:ml-64">
         {/* Top header */}
-        <header className="sticky top-0 z-30 border-b border-blue-100 bg-white/90 backdrop-blur-md shadow-sm">
+        <header className="sticky top-0 z-30 border-b border-gray-200 bg-white/90 backdrop-blur-md shadow-sm">
           <div className="mx-auto flex max-w-[110rem] items-center justify-between gap-4 px-4 py-4 lg:px-6">
             <div className="flex items-center gap-3 min-w-0">
               <button
@@ -496,15 +496,10 @@ export default function DashboardLayout({ children, user }: DashboardLayoutProps
                 <Menu size={20} />
               </button>
 
-              <Link href={`/${pathSegment}/dashboard`} className="hidden sm:flex items-center gap-2.5 min-w-0">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-200">
-                  <GraduationCap className="h-5 w-5 text-white" />
-                </span>
-                <div className="min-w-0 leading-tight">
-                  <p className="font-display text-[15px] font-bold tracking-[-0.02em] text-slate-900 truncate">UniLife</p>
-                  <p className="text-xs text-slate-500 truncate">{activeNavLabel ?? 'Dashboard'}</p>
-                </div>
-              </Link>
+              <div className="hidden sm:block min-w-0">
+                <p className="text-sm font-semibold text-slate-900 truncate">{activeNavLabel ?? 'Dashboard'}</p>
+                <p className="text-xs text-slate-500 truncate">Workspace</p>
+              </div>
 
               <div className="sm:hidden min-w-0">
                 <p className="text-sm font-semibold text-slate-900 truncate">{activeNavLabel ?? 'Dashboard'}</p>

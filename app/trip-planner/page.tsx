@@ -79,21 +79,13 @@ export default async function TripPlannerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <header className="bg-white/90 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-6 py-5">
-          <Link href="/" className="flex items-center gap-3 min-w-0">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-200">
-              <MapPin size={18} className="text-white" />
-            </span>
-            <div className="min-w-0 leading-tight">
-              <p className="font-display text-[15px] font-bold tracking-[-0.02em] text-slate-900 truncate">UniLife</p>
-              <p className="text-xs text-slate-500 truncate">Trip Planner</p>
-            </div>
-          </Link>
+          <p className="text-sm font-semibold text-slate-900">Trip Planner</p>
           <Link
             href="/login"
-            className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             Sign in to save
           </Link>
